@@ -45,8 +45,8 @@ block_metadata_endpoint = true
 allowed_domains = [
     "registry.npmjs.org",
     "npm.pkg.github.com",
-    "api.anthropic.com",
-    "platform.claude.com",
+    # "api.anthropic.com",
+    # "platform.claude.com",
     # Claude via GCP Vertex AI -- add your region's endpoint:
     # "us-central1-aiplatform.googleapis.com",
     # "oauth2.googleapis.com",
@@ -60,7 +60,7 @@ enabled = true
 path = "~/.coi/logs/network.log"
 
 [tool]
-name = "claude"
+name = "opencode"
 auto_context = true
 context_json = true
 
