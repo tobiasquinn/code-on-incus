@@ -839,7 +839,7 @@ main() {
     install_selected_agents
     install_dummy
     install_docker
-    install_github_cli
+    #install_github_cli
     cleanup
 
     log "coi image build complete!"
