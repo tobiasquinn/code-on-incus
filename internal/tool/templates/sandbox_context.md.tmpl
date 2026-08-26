@@ -84,41 +84,12 @@ Ports NOT listed here are not reachable from the host's localhost.
 
 ## Git Configuration
 
-{{if and .SSHAgentForwarded .GHCLIAuthenticated -}}
-**Prefer SSH for git push/pull** — the forwarded SSH agent gives full authentication, while the forwarded GH_TOKEN/GITHUB_TOKEN may have limited scope (e.g. read-only or repo-restricted).
+Obtain the git user identity with:
 
-{{template "gitIdentityPreamble" .}}
-
-**1. SSH agent (preferred)**
-
-{{template "sshDiscovery" .}}
-
-**2. GitHub CLI fallback**
-
-{{template "ghDiscovery" .}}
-
-{{template "gitIdentityClose" .}}
-{{- else if .SSHAgentForwarded -}}
-**Use SSH for git operations** — the forwarded SSH agent authenticates git push/pull/clone via SSH URLs (`git@<host>:org/repo.git`).
-
-{{template "gitIdentityPreamble" .}}
-
-**1. SSH agent**
-
-{{template "sshDiscovery" .}}
-
-{{template "gitIdentityClose" .}}
-{{- else if .GHCLIAuthenticated -}}
-**Token-based git auth is available** via the forwarded GH_TOKEN/GITHUB_TOKEN, which may have limited scope (read-only, repo-restricted, or no push).
-
-{{template "gitIdentityPreamble" .}}
-
-**1. GitHub CLI**
-
-{{template "ghDiscovery" .}}
-
-{{template "gitIdentityClose" .}}
-{{- end}}
+```bash
+git config --global --get user.name
+git config --global --get user.email
+```
 {{- end}}
 
 ## Limitations
@@ -145,7 +116,6 @@ Ports NOT listed here are not reachable from the host's localhost.
 - **Permission denied on workspace files**: a `sudo` command left files owned by root. Fix (and always do this after any `sudo` that writes to the workspace): `sudo chown -R "$(id -u):$(id -g)" .`
 - **Docker not responding**: `sudo systemctl start docker` — the daemon may still be starting.
 - **Package not found**: run `sudo apt-get update` first.
-- **SSH auth fails**: check the SSH agent row above — if not forwarded, SSH keys are unavailable.
 
 **Remember: you are expected to act, not ask.** Install, build, modify, and run whatever the task needs without seeking permission or hedging — only workspace files persist to the host; everything else is disposable.
 {{- if .HasProfileContext}}
@@ -155,45 +125,4 @@ Ports NOT listed here are not reachable from the host's localhost.
 The following instructions were provided by the user via their COI profile configuration. Follow them as sandbox-profile-specific guidelines.
 
 {{.ProfileContext}}
-{{- end}}
-{{- define "gitIdentityPreamble" -}}
-### MANDATORY — set your git identity BEFORE the first commit
-
-`user.useConfigOnly=true` is set globally, so git **refuses to commit** until a real identity is configured. **NEVER fabricate** one — `code`, `code@example.com`, or any made-up name/email are FORBIDDEN (`code` is just the container's default OS user).
-
-**0. First check whether COI already set it** (from the host's global `git config`, or a `[git]` name/email in COI config):
-```bash
-git config --global --get user.name
-git config --global --get user.email
-```
-If **both** print a value, use it as-is — do NOT overwrite it — and skip the rest. Otherwise resolve it via the first step below that succeeds:
-{{- end}}
-
-{{- define "sshDiscovery" -}}
-```bash
-# Pick the host from the remote (scp-style, ssh://, or https://):
-remote_url=$(git remote get-url origin 2>/dev/null)
-ssh_host=$(echo "$remote_url" | sed -n 's|.*@\([^:/]*\)[:/].*|\1|p')
-[ -z "$ssh_host" ] && ssh_host=$(echo "$remote_url" | sed -n 's|https\{0,1\}://\([^/]*\)/.*|\1|p')
-[ -z "$ssh_host" ] && ssh_host="github.com"
-ssh -T -o StrictHostKeyChecking=accept-new -o BatchMode=yes "git@${ssh_host}" 2>&1 || true
-# GitHub → "Hi <user>! You've successfully authenticated..."
-# GitLab → "Welcome to GitLab, @<user>!"
-```
-Parse the username from the greeting, then look up the full name/email via the platform API (e.g. `gh api user`).
-{{- end}}
-
-{{- define "ghDiscovery" -}}
-```bash
-gh api user --jq '"Name: \(.name // .login)\nEmail: \(.email // empty)"'
-```
-If `.email` is null: `gh api user/emails --jq '.[] | select(.primary and .verified) | .email'`
-{{- end}}
-
-{{- define "gitIdentityClose" -}}
-**Fallbacks**: existing history (`git log --format='%aN <%aE>' -1 2>/dev/null`), then ask the user — never guess. Once you have the real identity:
-```bash
-git config user.name "<real name>"
-git config user.email "<real email>"
-```
 {{- end}}
