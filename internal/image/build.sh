@@ -221,8 +221,9 @@ create_code_user() {
         groupadd -g "$CODE_UID" "$CODE_USER" 2>/dev/null || true
         useradd -m -u "$CODE_UID" -g "$CODE_USER" -s /bin/bash "$CODE_USER"
     fi
-    mkdir -p "/home/$CODE_USER/.claude"
-    mkdir -p "/home/$CODE_USER/.codex"
+    # The agents' config dirs (~/.claude, ~/.codex) are created by their
+    # installers (install_claude_cli / install_codex) so an image built with a
+    # restricted COI_AGENTS set does not carry dirs for agents it lacks.
     mkdir -p "/home/$CODE_USER/.ssh"
     chmod 700 "/home/$CODE_USER/.ssh"
     # Pre-populate known_hosts. Try ssh-keyscan first (fresh keys); fall back to
