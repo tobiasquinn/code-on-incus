@@ -46,8 +46,8 @@ func TestEmbeddedDefaultConfigValues(t *testing.T) {
 	if cfg.Network.BlockMetadataEndpoint == nil || !*cfg.Network.BlockMetadataEndpoint {
 		t.Error("Expected block_metadata_endpoint=true")
 	}
-	if cfg.Tool.Name != "claude" {
-		t.Errorf("Expected tool name 'claude', got %q", cfg.Tool.Name)
+	if cfg.Tool.Name != "opencode" {
+		t.Errorf("Expected tool name 'opencode', got %q", cfg.Tool.Name)
 	}
 	if cfg.Tool.AutoContext == nil || !*cfg.Tool.AutoContext {
 		t.Error("Expected auto_context=true")
@@ -125,8 +125,8 @@ func TestSynthesizeDefaultProfile(t *testing.T) {
 	if profile.Source != "(built-in)" {
 		t.Errorf("Expected source '(built-in)', got %q", profile.Source)
 	}
-	if profile.Tool == nil || profile.Tool.Name != "claude" {
-		t.Error("Expected tool.name=claude")
+	if profile.Tool == nil || profile.Tool.Name != "opencode" {
+		t.Error("Expected tool.name=opencode")
 	}
 	if profile.Network == nil || profile.Network.Mode != NetworkModeRestricted {
 		t.Error("Expected network mode 'restricted'")
@@ -234,8 +234,8 @@ func TestInheritFromDefault(t *testing.T) {
 		t.Error("Expected network mode 'restricted' inherited from default")
 	}
 	// Should inherit tool from default
-	if child.Tool == nil || child.Tool.Name != "claude" {
-		t.Error("Expected tool.name='claude' inherited from default")
+	if child.Tool == nil || child.Tool.Name != "opencode" {
+		t.Error("Expected tool.name='opencode' inherited from default")
 	}
 	// Should inherit git from default
 	if child.Git == nil || child.Git.WritableHooks == nil || *child.Git.WritableHooks {

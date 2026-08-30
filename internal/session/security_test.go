@@ -271,10 +271,11 @@ func TestDefaultProtectedPaths(t *testing.T) {
 	cfg := config.GetDefaultConfig()
 	paths := cfg.Security.ProtectedPaths
 
+	// This fork runs opencode/pi only, so the claude/codex settings files are
+	// deliberately NOT in the default set (see TestDefaultConfig_DoesNotProtectAgentSettingsByDefault).
 	expected := []string{
 		".git/hooks", ".git/config", ".git/config.worktree", ".git/info/attributes",
-		".husky", ".vscode", ".coi", ".claude/settings.json", ".claude/settings.local.json",
-		".codex/config.toml",
+		".husky", ".vscode", ".coi",
 	}
 
 	if len(paths) != len(expected) {

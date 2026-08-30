@@ -35,7 +35,7 @@ func TestToolClaudeEffort_AbsentWhenUnset(t *testing.T) {
 func TestToolClaudeEffort_Variants(t *testing.T) {
 	for _, level := range []string{"low", "medium", "high", "xhigh", "max", "auto"} {
 		env := sandboxEnvForProjectConfig(t,
-			"[tool.claude]\neffort_level = \""+level+"\"\n")
+			"[tool]\nname = \"claude\"\n\n[tool.claude]\neffort_level = \""+level+"\"\n")
 		if env["CLAUDE_CODE_EFFORT_LEVEL"] != level {
 			t.Errorf("effort_level=%q: expected CLAUDE_CODE_EFFORT_LEVEL=%q, got %q",
 				level, level, env["CLAUDE_CODE_EFFORT_LEVEL"])
