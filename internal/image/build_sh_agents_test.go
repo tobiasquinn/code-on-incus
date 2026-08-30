@@ -180,3 +180,41 @@ func TestBuildScriptMainDispatchesThroughSelector(t *testing.T) {
 		}
 	}
 }
+
+// Agent config dirs (~/.claude, ~/.codex) must be created by the per-agent
+// installers, not unconditionally in create_code_user: an image built with a
+// restricted COI_AGENTS set (e.g. "opencode pi") must not carry config dirs
+// for agents it does not install. The dirs cannot be dropped entirely —
+// runtime setup creates missing parents as root and only chowns the file, so
+// an installed agent without a host-seeded config dir would get a root-owned
+// dir it cannot write to. Comments are stripped so an explanatory comment
+// mentioning a dir name cannot false-fail the check.
+func TestBuildScriptAgentConfigDirsAreConditional(t *testing.T) {
+	script := string(embeddedCoiBuildScript)
+
+	user := extractShellFunc(t, script, "create_code_user")
+	if !strings.Contains(user, `"/.ssh"`) && !strings.Contains(user, "/.ssh") {
+		t.Fatalf("extracted create_code_user() looks truncated (missing the .ssh mkdir):\n%s", user)
+	}
+	userBody := stripShellComments(user)
+	for _, dir := range []string{".claude", ".codex"} {
+		if strings.Contains(userBody, dir) {
+			t.Errorf("create_code_user() creates ~/%s unconditionally; agent config dirs must be "+
+				"created by their installers so a restricted COI_AGENTS set leaves no stray dirs", dir)
+		}
+	}
+
+	for fn, dir := range map[string]string{
+		"install_claude_cli": `"/home/$CODE_USER/.claude"`,
+		"install_codex":      `"/home/$CODE_USER/.codex"`,
+	} {
+		body := stripShellComments(extractShellFunc(t, script, fn))
+		if !strings.Contains(body, "/usr/local/bin/") {
+			t.Fatalf("extracted %s() looks truncated (missing the trailing symlink):\n%s", fn, body)
+		}
+		if !strings.Contains(body, "install -d") || !strings.Contains(body, dir) {
+			t.Errorf("%s() must pre-create %s owned by the code user (install -d -o/-g), "+
+				"so the agent's config dir exists in images that install the agent", fn, dir)
+		}
+	}
+}

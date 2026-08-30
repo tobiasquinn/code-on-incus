@@ -1444,24 +1444,36 @@ func TestApplyProfile_AliasPreservation(t *testing.T) {
 	})
 }
 
-// The Claude Code project settings files (where the "hooks" key lives) must be
-// default protected paths so a contained agent cannot plant/modify hooks that a
-// later session would auto-execute on open.
-func TestDefaultConfig_ProtectsClaudeSettings(t *testing.T) {
+// This fork runs opencode/pi only, so the claude/codex settings files are
+// deliberately NOT default protected paths (nothing here consumes them; the
+// placeholder dirs they force into every workspace are unwanted noise). Users
+// who run claude/codex on the host re-add them via trusted-scope
+// [security] additional_protected_paths — the protection mechanism itself is
+// unchanged and still keys off these paths (internal/session/security.go).
+func TestDefaultConfig_DoesNotProtectAgentSettingsByDefault(t *testing.T) {
 	cfg := GetDefaultConfig()
-	want := map[string]bool{
-		".claude/settings.json":       false,
-		".claude/settings.local.json": false,
+	removed := []string{
+		".claude/settings.json",
+		".claude/settings.local.json",
+		".codex/config.toml",
 	}
-	for _, p := range cfg.Security.GetEffectiveProtectedPaths() {
-		if _, ok := want[p]; ok {
-			want[p] = true
+	effective := cfg.Security.GetEffectiveProtectedPaths()
+	for _, p := range effective {
+		for _, r := range removed {
+			if p == r {
+				t.Errorf("%s should NOT be a default protected path in this fork", p)
+			}
 		}
 	}
-	for p, found := range want {
-		if !found {
-			t.Errorf("%s should be a default protected path", p)
+	// The host-executed git/IDE protections must survive the trim.
+	foundHooks := false
+	for _, p := range effective {
+		if p == ".git/hooks" {
+			foundHooks = true
 		}
+	}
+	if !foundHooks {
+		t.Error(".git/hooks must remain a default protected path")
 	}
 }
 
@@ -1484,10 +1496,15 @@ func TestGetEffectiveProtectedPaths_WritablePathsSubtracts(t *testing.T) {
 }
 
 // A trusted-scope security override must carry writable_paths through Merge
-// (the opt-out is only honored from trusted config).
+// (the opt-out is only honored from trusted config). The protected set is
+// seeded explicitly because this fork's defaults no longer include the agent
+// settings files.
 func TestConfigMerge_CarriesWritablePaths(t *testing.T) {
 	cfg := GetDefaultConfig()
-	cfg.Merge(&Config{Security: SecurityConfig{WritablePaths: []string{".claude/settings.json"}}})
+	cfg.Merge(&Config{Security: SecurityConfig{
+		ProtectedPaths: []string{".git/hooks", ".claude/settings.json"},
+		WritablePaths:  []string{".claude/settings.json"},
+	}})
 	for _, p := range cfg.Security.GetEffectiveProtectedPaths() {
 		if p == ".claude/settings.json" {
 			t.Error("Merge should carry writable_paths so .claude/settings.json becomes writable")
