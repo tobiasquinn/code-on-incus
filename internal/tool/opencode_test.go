@@ -13,8 +13,8 @@ func TestOpencodeTool_Basics(t *testing.T) {
 	if oc.Binary() != "opencode" {
 		t.Errorf("Binary() = %q, want %q", oc.Binary(), "opencode")
 	}
-	if oc.ConfigDirName() != ".config/opencode" {
-		t.Errorf("ConfigDirName() = %q, want %q", oc.ConfigDirName(), ".config/opencode")
+	if oc.ConfigDirName() != ".local/share/opencode" {
+		t.Errorf("ConfigDirName() = %q, want %q", oc.ConfigDirName(), ".local/share/opencode")
 	}
 	if oc.SessionsDirName() != "sessions-opencode" {
 		t.Errorf("SessionsDirName() = %q, want %q", oc.SessionsDirName(), "sessions-opencode")
@@ -93,7 +93,7 @@ func TestOpencodeTool_EssentialConfigFiles(t *testing.T) {
 		t.Fatal("OpencodeTool does not implement ToolWithConfigDirFiles")
 	}
 	files := tcf.EssentialConfigFiles()
-	expected := []string{"opencode.json", "tui.json"}
+	expected := []string{"auth.json"}
 	if len(files) != len(expected) {
 		t.Fatalf("EssentialConfigFiles() = %v, want %v", files, expected)
 	}
