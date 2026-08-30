@@ -513,8 +513,8 @@ func TestSSHConfigMerge(t *testing.T) {
 func TestToolConfigDefaults(t *testing.T) {
 	cfg := GetDefaultConfig()
 
-	if cfg.Tool.Name != "claude" {
-		t.Errorf("Expected default tool name 'claude', got '%s'", cfg.Tool.Name)
+	if cfg.Tool.Name != "opencode" {
+		t.Errorf("Expected default tool name 'opencode', got '%s'", cfg.Tool.Name)
 	}
 
 	if cfg.Tool.Binary != "" {
