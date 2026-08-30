@@ -38,6 +38,8 @@
 
 - **Trimmed the injected `SANDBOX_CONTEXT.md` ~30% to save per-session tokens (#718)** — the sandbox context prepended to the agent's instructions every session dropped from ~2,260 to ~1,570 tokens (SSH+GitHub case) by removing sections that only restated others: `What You Can Do` and `Best Practices` duplicated the autonomy, mise, and file-ownership guidance already present elsewhere. All distinct instructions are preserved (a second, deliberate autonomy reminder is kept), and the triplicated git-identity block is now a set of shared template blocks so the three auth variants no longer drift. No behavior or config changes.
 
+- **opencode is now installed via mise** — replaces the manual `opencode-linux-${ARCH}.tar.gz` download/extract in `build.sh` with `mise use --global opencode@latest`. mise handles architecture selection and checksum verification, and the binary is still symlinked to `/usr/local/bin/opencode` for system-wide access.
+
 ### Fixed
 
 - **Auto-context block no longer duplicates in a CRLF-edited `CLAUDE.md`/`AGENTS.md` (#674 follow-up)** — coi maintains exactly one managed sandbox-context block in the tool's auto-load file by matching its `BEGIN`/`END` marker lines. If a user edited that file on Windows (CRLF), the markers gained a trailing `\r` and the exact line-match missed the old block, so a fresh copy was appended every session (the #674 growth bug, for CRLF files). Marker matching now tolerates a trailing `\r`. Covered by a unit test on the CRLF path and a new integration test that seeds a real host `CLAUDE.md` with user content and verifies it survives exactly once (with a single coi block) across repeated persistent-container reuse — the host-content reconcile path the byte-exact unit fakes couldn't validate.

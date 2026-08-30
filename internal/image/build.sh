@@ -426,64 +426,42 @@ install_claude_cli() {
 }
 
 #######################################
-# Map the host CPU architecture to the opencode release asset suffix.
-# opencode publishes opencode-linux-x64.tar.gz and opencode-linux-arm64.tar.gz.
-# Installing the x86_64 build on an arm64 host fails at runtime with
-# "qemu-x86_64: Could not open '/lib64/ld-linux-x86-64.so.2'" (issue #506).
-# Echoes the suffix on stdout; returns non-zero for unsupported architectures.
-#######################################
-opencode_asset_arch() {
-    case "$(uname -m)" in
-        x86_64 | amd64) echo "x64" ;;
-        aarch64 | arm64) echo "arm64" ;;
-        *) return 1 ;;
-    esac
-}
-
-#######################################
-# Install opencode
+# Install opencode via mise
 # See: https://opencode.ai
+# mise registry: https://mise.jdx.dev/registry.html
 #######################################
 install_opencode() {
-    log "Installing opencode..."
+    log "Installing opencode via mise..."
 
-    # Select the release asset for the host architecture (issue #506).
-    local OPENCODE_ARCH
-    if ! OPENCODE_ARCH="$(opencode_asset_arch)"; then
-        log "ERROR: unsupported CPU architecture '$(uname -m)' for opencode."
-        exit 1
-    fi
-
-    # Download the binary directly from the /latest/download/ redirect URL.
-    # This does NOT hit the GitHub API and is not subject to rate limits
-    # (unlike the official installer which calls api.github.com).
-    local INSTALL_DIR="/home/$CODE_USER/.opencode/bin"
-    local OPENCODE_PATH="$INSTALL_DIR/opencode"
-    local DOWNLOAD_URL="https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-${OPENCODE_ARCH}.tar.gz"
-
-    mkdir -p "$INSTALL_DIR"
-    chown "$CODE_USER:$CODE_USER" "$INSTALL_DIR"
-
+    # Install opencode globally via mise as the code user. mise handles
+    # architecture selection and checksum verification automatically.
     local attempt
     for attempt in 1 2 3; do
-        if curl -fsSL "$DOWNLOAD_URL" | tar xz -C "$INSTALL_DIR"; then
-            chmod +x "$OPENCODE_PATH"
-            chown "$CODE_USER:$CODE_USER" "$OPENCODE_PATH"
+        if su - "$CODE_USER" -c 'mise use --global opencode@latest'; then
             break
         fi
         if [ "$attempt" -eq 3 ]; then
-            log "ERROR: opencode installation failed after 3 attempts."
+            log "ERROR: opencode installation via mise failed after 3 attempts."
             exit 1
         fi
-        log "opencode download failed (attempt $attempt/3), retrying in 10s..."
+        log "opencode mise install failed (attempt $attempt/3), retrying in 10s..."
         sleep 10
     done
 
-    if [[ ! -x "$OPENCODE_PATH" ]]; then
-        log "ERROR: opencode binary not found at $OPENCODE_PATH after installation."
+    # Verify the binary is accessible through mise
+    if ! su - "$CODE_USER" -c "mise exec -- which opencode" >/dev/null 2>&1; then
+        log "ERROR: opencode binary not found via mise after installation."
         exit 1
     fi
 
+    # Make opencode available system-wide for non-interactive shells that do
+    # not source mise activation.
+    local OPENCODE_PATH
+    OPENCODE_PATH="$(su - "$CODE_USER" -c 'mise which opencode' 2>/dev/null || true)"
+    if [ -z "$OPENCODE_PATH" ]; then
+        log "ERROR: could not locate mise-managed opencode binary."
+        exit 1
+    fi
     ln -sf "$OPENCODE_PATH" /usr/local/bin/opencode
 
     log "opencode $(opencode --version 2>/dev/null || echo 'installed')"
