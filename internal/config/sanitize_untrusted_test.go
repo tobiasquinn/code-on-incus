@@ -255,7 +255,9 @@ func TestUntrustedConfigCannotRemoveDefaultProtections(t *testing.T) {
 	base.Merge(fileCfg)
 
 	eff := base.Security.GetEffectiveProtectedPaths()
-	for _, must := range []string{".git/hooks", ".git/config", ".claude/settings.json", ".coi"} {
+	// .claude/settings.json is no longer a default in this fork; assert the
+	// still-default host-executed paths survive the untrusted downgrade.
+	for _, must := range []string{".git/hooks", ".git/config", ".husky", ".coi"} {
 		found := false
 		for _, p := range eff {
 			if p == must {

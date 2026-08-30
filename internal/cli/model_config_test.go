@@ -60,7 +60,7 @@ func TestToolClaudeModel_InjectedFromConfig(t *testing.T) {
 // TestToolClaudeModel_AliasPassedThrough proves a short alias is delivered
 // verbatim (confirmed to resolve to the aliased model via ANTHROPIC_MODEL).
 func TestToolClaudeModel_AliasPassedThrough(t *testing.T) {
-	env := sandboxEnvForProjectConfig(t, "[tool.claude]\nmodel = \"opus\"\n")
+	env := sandboxEnvForProjectConfig(t, "[tool]\nname = \"claude\"\n\n[tool.claude]\nmodel = \"opus\"\n")
 	if env["ANTHROPIC_MODEL"] != "opus" {
 		t.Errorf("expected ANTHROPIC_MODEL=opus (alias passed through verbatim), got %q",
 			env["ANTHROPIC_MODEL"])
@@ -80,7 +80,7 @@ func TestToolClaudeModel_AbsentWhenUnset(t *testing.T) {
 // the sandbox env block without clobbering each other (both are set from config).
 func TestToolClaudeModel_CoexistsWithEffort(t *testing.T) {
 	env := sandboxEnvForProjectConfig(t,
-		"[tool.claude]\nmodel = \"claude-opus-4-8\"\neffort_level = \"high\"\n")
+		"[tool]\nname = \"claude\"\n\n[tool.claude]\nmodel = \"claude-opus-4-8\"\neffort_level = \"high\"\n")
 	if env["ANTHROPIC_MODEL"] != "claude-opus-4-8" {
 		t.Errorf("expected ANTHROPIC_MODEL=claude-opus-4-8, got %q", env["ANTHROPIC_MODEL"])
 	}
