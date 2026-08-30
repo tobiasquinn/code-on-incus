@@ -95,6 +95,49 @@ def test_unknown_agent_warns_and_skips():
     assert "WARNING" in out and "bogus" in out, out
 
 
+# --- agent config dirs follow the agent selection ----------------------------
+
+
+def _func_body(name):
+    """Extract a `name() { ... }` body from build.sh (closing brace at column 0,
+    same convention as the Go extractShellFunc helper)."""
+    content = BUILD_SH.read_text()
+    start = content.index(f"{name}() {{")
+    end = content.index("\n}", start)
+    return content[start:end]
+
+
+def _strip_comments(body):
+    return "\n".join(line.split("#", 1)[0] for line in body.splitlines())
+
+
+def test_create_code_user_creates_no_agent_config_dirs():
+    """~/.claude and ~/.codex must NOT be created unconditionally: an image
+    built with COI_AGENTS='opencode pi' must not carry dirs for absent agents."""
+    body = _strip_comments(_func_body("create_code_user"))
+    assert "/.ssh" in body, f"create_code_user body looks truncated: {body}"
+    for d in (".claude", ".codex"):
+        assert d not in body, (
+            f"create_code_user creates ~/{d} unconditionally; agent config dirs "
+            "must be created by their installers so COI_AGENTS selection is honored"
+        )
+
+
+def test_agent_installers_create_their_config_dirs():
+    """Each agent installer pre-creates its config dir owned by the code user,
+    so the dir exists in images that DO install the agent (runtime setup
+    mkdirs missing parents as root and only chowns the file)."""
+    for fn, d in (
+        ("install_claude_cli", '"/home/$CODE_USER/.claude"'),
+        ("install_codex", '"/home/$CODE_USER/.codex"'),
+    ):
+        body = _strip_comments(_func_body(fn))
+        assert "/usr/local/bin/" in body, f"{fn} body looks truncated: {body}"
+        assert "install -d" in body and d in body, (
+            f"{fn} must pre-create {d} owned by the code user (install -d -o/-g)"
+        )
+
+
 # --- end-to-end via the real coi binary (config -> validation) ---------------
 
 
