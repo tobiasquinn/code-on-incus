@@ -385,6 +385,13 @@ prefer_ipv4() {
 install_claude_cli() {
     log "Installing Claude CLI (native)..."
 
+    # Pre-create the config dir owned by the code user. Claude's setup at
+    # session start (setupCLIConfig / auto-context) creates missing parents as
+    # root and only chowns the file, so without this a container with no
+    # host-seeded ~/.claude would end up with a root-owned config dir the CLI
+    # cannot write to.
+    install -d -o "$CODE_USER" -g "$CODE_USER" "/home/$CODE_USER/.claude"
+
     # Run the native installer as the code user (with retries for transient
     # network failures). `set -o pipefail` inside the su login shell is what
     # makes the retry work: without it the pipeline's status is bash's, which
@@ -527,6 +534,12 @@ install_pi() {
 #######################################
 install_codex() {
     log "Installing Codex CLI (native)..."
+
+    # Pre-create the config dir owned by the code user — same reasoning as
+    # install_claude_cli: runtime setup mkdirs missing parents as root, so a
+    # container without host-seeded ~/.codex would otherwise get a root-owned
+    # config dir codex cannot write to.
+    install -d -o "$CODE_USER" -g "$CODE_USER" "/home/$CODE_USER/.codex"
 
     # Run the native installer as the code user (with retries for transient
     # network failures). `set -o pipefail` inside the su login shell is
