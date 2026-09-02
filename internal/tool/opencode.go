@@ -1,6 +1,11 @@
 package tool
 
-import "path/filepath"
+import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"path/filepath"
+)
 
 // OpencodeTool implements Tool for opencode (https://opencode.ai)
 type OpencodeTool struct {
@@ -103,9 +108,41 @@ func (c *OpencodeTool) AlwaysSetupConfig() bool { return mustBundle("opencode").
 // SQLite database persists across ephemeral container recreations.
 // Without this, data lives in ~/.local/share/opencode/ (inside the container)
 // and is destroyed when the ephemeral container is deleted.
+//
+// Also exports OPENCODE_AUTH_CONTENT with the host's auth.json, compacted to a
+// single line. opencode prefers this env var over reading the auth file, so
+// credentials are never copied into the container. A missing or invalid host
+// auth.json degrades to the tool's default (no credential).
 func (c *OpencodeTool) GetContainerEnv(workspacePath string) map[string]string {
-	return map[string]string{
+	env := map[string]string{
 		"XDG_DATA_HOME":  filepath.Join(workspacePath, ".local", "share"),
 		"XDG_STATE_HOME": filepath.Join(workspacePath, ".local", "state"),
 	}
+	if auth := readHostAuthJSON(); auth != "" {
+		env["OPENCODE_AUTH_CONTENT"] = auth
+	}
+	return env
+}
+
+// readHostAuthJSON returns the host's opencode auth.json (from opencode's data
+// dir: $XDG_DATA_HOME/opencode/auth.json, defaulting to ~/.local/share) as a
+// compact, single-line JSON string, or "" when the file is missing or invalid.
+// The container env sanitizer (session.planToolContainerEnv) rejects values
+// containing newlines, so pretty-printed JSON has to be flattened here.
+func readHostAuthJSON() string {
+	dataDir := os.Getenv("XDG_DATA_HOME")
+	if dataDir == "" {
+		if home, err := os.UserHomeDir(); err == nil {
+			dataDir = filepath.Join(home, ".local", "share")
+		}
+	}
+	content, err := os.ReadFile(filepath.Join(dataDir, "opencode", "auth.json"))
+	if err != nil {
+		return ""
+	}
+	var buf bytes.Buffer
+	if err := json.Compact(&buf, content); err != nil {
+		return ""
+	}
+	return buf.String()
 }

@@ -61,15 +61,15 @@ func TestOpencodeBundle_MatchesHardcodedValues(t *testing.T) {
 	if !ok {
 		t.Fatal("opencode bundle not found")
 	}
-	if b.ConfigDir != ".local/share/opencode" {
-		t.Errorf("ConfigDir = %q, want %q", b.ConfigDir, ".local/share/opencode")
+	if b.ConfigDir != ".config/opencode" {
+		t.Errorf("ConfigDir = %q, want %q", b.ConfigDir, ".config/opencode")
 	}
-	want := []string{"auth.json"}
+	want := []string{"opencode.jsonc"}
 	if !reflect.DeepEqual(b.Files, want) {
 		t.Errorf("Files = %v, want %v", b.Files, want)
 	}
-	if b.SandboxSettingsFile != "opencode.json" {
-		t.Errorf("SandboxSettingsFile = %q, want %q", b.SandboxSettingsFile, "opencode.json")
+	if b.SandboxSettingsFile != "opencode.jsonc" {
+		t.Errorf("SandboxSettingsFile = %q, want %q", b.SandboxSettingsFile, "opencode.jsonc")
 	}
 	if b.StateFile != "" {
 		t.Errorf("StateFile = %q, want empty", b.StateFile)

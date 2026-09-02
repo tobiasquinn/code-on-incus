@@ -329,6 +329,73 @@ func RemountMovedWorkspace(mgr WorkspaceRemounter, workspacePath string, preserv
 	return cwp, true, nil
 }
 
+// stripJSONC normalizes JSONC (JSON with comments) to plain JSON by removing
+// `//` line comments, `/* */` block comments, and trailing commas — the JSONC
+// supported by opencode.jsonc. String literals are preserved exactly, so a
+// `//` inside "http://example.com" survives. Plain JSON is unaffected.
+func stripJSONC(in string) string {
+	var out strings.Builder
+	inString := false
+	escaped := false
+
+	for i := 0; i < len(in); i++ {
+		ch := in[i]
+
+		if inString {
+			out.WriteByte(ch)
+			if escaped {
+				escaped = false
+			} else if ch == '\\' {
+				escaped = true
+			} else if ch == '"' {
+				inString = false
+			}
+			continue
+		}
+
+		// Outside string literals
+		switch ch {
+		case '"':
+			inString = true
+			out.WriteByte(ch)
+		case '/':
+			if i+1 < len(in) && in[i+1] == '/' {
+				// line comment — drop until newline
+				for i < len(in) && in[i] != '\n' {
+					i++
+				}
+				out.WriteByte('\n') // keep the newline (or the implicit end)
+				continue
+			}
+			if i+1 < len(in) && in[i+1] == '*' {
+				// block comment — drop until */
+				for i+1 < len(in) && !(in[i] == '*' && in[i+1] == '/') {
+					i++
+				}
+				i++ // consume the closing '/'
+				continue
+			}
+			out.WriteByte(ch)
+		case ',', '}', ']':
+			// Trailing comma stripping: look ahead; if the next non-space
+			// character is a closer, drop the comma.
+			if ch == ',' {
+				j := i + 1
+				for j < len(in) && (in[j] == ' ' || in[j] == '\t' || in[j] == '\n' || in[j] == '\r') {
+					j++
+				}
+				if j < len(in) && (in[j] == '}' || in[j] == ']') {
+					continue
+				}
+			}
+			out.WriteByte(ch)
+		default:
+			out.WriteByte(ch)
+		}
+	}
+	return out.String()
+}
+
 // mergeJSONSettings merges settings into existing JSON content with one-level deep merge.
 // If both existing and new values for a key are maps, their entries are merged;
 // otherwise the new value overwrites. Returns indented JSON with trailing newline.
@@ -337,8 +404,9 @@ func RemountMovedWorkspace(mgr WorkspaceRemounter, workspacePath string, preserv
 func mergeJSONSettings(existingContent []byte, settings map[string]interface{}) (result []byte, parseErr error, err error) {
 	existing := make(map[string]interface{})
 
-	// Parse existing content if non-empty
-	trimmed := strings.TrimSpace(string(existingContent))
+	// Parse existing content if non-empty. JSONC input (opencode.jsonc);
+	// comments and trailing commas are stripped before the plain-JSON parse.
+	trimmed := stripJSONC(strings.TrimSpace(string(existingContent)))
 	if len(trimmed) > 0 {
 		if unmarshalErr := json.Unmarshal([]byte(trimmed), &existing); unmarshalErr != nil {
 			// Invalid JSON — start fresh with settings only, report to caller
