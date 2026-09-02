@@ -51,7 +51,7 @@ def test_opencode_settings_merge_preserves_user_config(
         "theme": "dark",
         "customUserSetting": "should_be_preserved",
     }
-    opencode_json = opencode_dir / "opencode.json"
+    opencode_json = opencode_dir / "opencode.jsonc"
     opencode_json.write_text(json.dumps(user_config, indent=2))
 
     env = {"COI_USE_DUMMY": "1", "HOME": str(fake_home)}
