@@ -68,6 +68,7 @@ install_base_dependencies() {
     log "Installing base dependencies..."
 
     apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
 
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
         curl wget git ca-certificates gnupg jq unzip sudo \
