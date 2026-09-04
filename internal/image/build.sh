@@ -790,7 +790,7 @@ EOF
 cleanup() {
     log "Cleaning up..."
     apt-get clean
-    rm -rf /var/lib/apt/lists/*
+    #rm -rf /var/lib/apt/lists/*
     log "Cleanup complete"
 }
 
