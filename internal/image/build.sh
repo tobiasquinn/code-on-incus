@@ -65,11 +65,14 @@ EOF
 # Install base dependencies
 #######################################
 install_base_dependencies() {
-    log "Installing base dependencies..."
-
+    log "Updating base image package information"
     apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
 
+    log "Upgrading base image packages..."
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
+    log "Base image packages upgraded"
+
+    log "Installing base dependencies..."
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
         curl wget git ca-certificates gnupg jq unzip sudo \
         tmux \
