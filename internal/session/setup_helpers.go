@@ -515,6 +515,30 @@ func SetupGitIdentity(mgr container.ContainerExecution, homeDir string, identity
 	logger("Configured container git identity from host global git config")
 }
 
+// SetupJJIdentity writes the git identity to ~/.config/jj/config.toml in the container.
+// This mirrors the git config so jj uses the same commit identity.
+func SetupJJIdentity(mgr container.ContainerExecution, homeDir string, identity GitIdentity, logger func(string)) {
+	if !identity.Complete() {
+		return
+	}
+	cmd := fmt.Sprintf(
+		`mkdir -p %s/.config/jj && cat > %s/.config/jj/config.toml << 'EOF'
+[user]
+name = %s
+email = %s
+EOF`,
+		shellEscape(homeDir),
+		shellEscape(homeDir),
+		shellEscape(strings.TrimSpace(identity.Name)),
+		shellEscape(strings.TrimSpace(identity.Email)),
+	)
+	if _, err := mgr.ExecCommand(cmd, container.ExecCommandOptions{Capture: true}); err != nil {
+		logger(fmt.Sprintf("Warning: Failed to configure jj identity: %v", err))
+		return
+	}
+	logger("Configured container jj identity from host global git config")
+}
+
 // tmpfsSizer is the subset of container operations ApplyTmpfsSizing needs.
 type tmpfsSizer interface {
 	SetTmpfsSize(size string) error
