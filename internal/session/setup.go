@@ -1286,6 +1286,7 @@ func configureGitIdentity(result *SetupResult, opts SetupOptions) error {
 		if err := SetupGitIdentityReadonly(result.Manager, result.HomeDir, opts.GitIdentity); err != nil {
 			return fmt.Errorf("git.readonly: could not lock the commit identity read-only: %w", err)
 		}
+		SetupJJIdentity(result.Manager, result.HomeDir, opts.GitIdentity, opts.Logger)
 		opts.Logger("Git identity locked read-only (git.readonly): " + result.HomeDir + "/.gitconfig cannot be changed in-container")
 	} else {
 		if opts.GitReadonly {
@@ -1293,6 +1294,7 @@ func configureGitIdentity(result *SetupResult, opts SetupOptions) error {
 		}
 		SetupGitIdentityGuard(result.Manager, result.HomeDir, opts.Logger)
 		SetupGitIdentity(result.Manager, result.HomeDir, opts.GitIdentity, opts.Logger)
+		SetupJJIdentity(result.Manager, result.HomeDir, opts.GitIdentity, opts.Logger)
 	}
 	return nil
 }
