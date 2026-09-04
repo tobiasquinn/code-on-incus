@@ -818,6 +818,18 @@ install_selected_agents() {
     done
 }
 
+install_jj_config() {
+    local CODE_HOME="/home/$CODE_USER"
+    mkdir -p $CODE_HOME/.config/jj
+    cat > $CODE_HOME/.config/jj/config.toml << 'EOF'
+[user]
+name = "Tobias Quinn"
+email = "tobias@tobiasquinn.com"
+EOF
+
+    log "Added jj tq user config"
+}
+
 main() {
     log "Starting coi image build..."
 
@@ -836,6 +848,7 @@ main() {
     install_dummy
     install_docker
     #install_github_cli
+    install_jj_config
     cleanup
 
     log "coi image build complete!"
