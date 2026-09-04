@@ -10,6 +10,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="tobiasquinn/code-on-incus"
+BRANCH="mine"
 BINARY_NAME="coi"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 VERSION="${VERSION:-latest}"
@@ -324,8 +325,8 @@ build_from_source() {
     trap "rm -rf '$tmp_dir'" EXIT
 
     # Clone repository
-    echo -e "${BLUE}→ Cloning repository...${NC}"
-    git clone --depth 1 "https://github.com/${REPO}.git" "$tmp_dir"
+    echo -e "${BLUE}→ Cloning repository... branch is '${BRANCH}'${NC}"
+    git clone --depth 1 --single-branch -b "${BRANCH}" "https://github.com/${REPO}.git" "$tmp_dir"
 
     # Build (as the current user — never under sudo, because sudo strips PATH
     # and user-scoped Go toolchains like mise/asdf/$HOME/go/bin would disappear).
