@@ -14,7 +14,7 @@ storage_pool = ""
 # from any workspace location. Trusted scope only.
 
 [container.build]
-agents = ["opencode", "pi"]
+agents = ["opencode", "pi", "codex"]
 
 [defaults]
 
