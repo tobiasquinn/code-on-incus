@@ -10,7 +10,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="tobiasquinn/code-on-incus"
-BRANCH="mine"
+BRANCH="with-codex"
 BINARY_NAME="coi"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 VERSION="${VERSION:-latest}"

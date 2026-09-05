@@ -13,9 +13,6 @@ storage_pool = ""
 # instead of the workspace path, so the same persistent session continues
 # from any workspace location. Trusted scope only.
 
-[container.build]
-agents = ["opencode", "pi"]
-
 [defaults]
 
 [paths]
